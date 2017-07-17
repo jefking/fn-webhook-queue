@@ -1,0 +1,22 @@
+{
+    "bindings": [
+        {
+            "authLevel": "function",
+            "type": "httpTrigger",
+            "direction": "in",
+            "name": "req",
+            "methods": [
+                "post"
+            ]
+        },
+        {
+            "queueName": "webhook",
+            "name": "out",
+            "type": "serviceBusTrigger",
+            "direction": "out",
+            "connection": "ServiceBus",
+            "accessRights": "Manage"
+        }
+    ],
+    "disabled": false
+}
