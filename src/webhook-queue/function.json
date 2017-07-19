@@ -10,6 +10,11 @@
             ]
         },
         {
+            "type": "http",
+            "direction": "out",
+            "name": "res"
+        },
+        {
             "queueName": "webhook",
             "name": "out",
             "type": "serviceBusTrigger",

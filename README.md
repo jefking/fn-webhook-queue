@@ -1,5 +1,5 @@
 # Server Default Static
-Webhook to Service Bus Queue.
+Webhook to Service Bus Queue, permissions can be handled in the Azure Function binding.
 
 ## Quick Deploy to Azure
 
