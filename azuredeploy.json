@@ -1,25 +1,43 @@
 {
+    "$schema": "http://schemas.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
     "parameters": {
         "siteName": {
             "type": "string",
             "metadata": {
                 "description": "The name of the function app that you wish to create."
             }
+        },
+        "siteLocation": {
+            "type": "string",
+            "defaultValue": "West US",
+            "metadata": {
+                "description": "The location to use for creating the function app and hosting plan. It must be one of the Azure locations that support function apps."
+            }
+        },
+        "queueName": {
+            "type": "string",
+            "defaultValue": "posted",
+            "metadata": {
+                "description": "Name of queue to populate."
+            }
         }
     },
     "variables": {
+        "sbVersion": "2015-08-01",
+        "serviceBusNamespaceName": "[concat('sb', uniqueString(parameters('siteName')))]",
+        "defaultSASKeyName": "RootManageSharedAccessKey",
+        "authRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('serviceBusNamespaceName'), variables('defaultSASKeyName'))]",
         "storageName": "[concat('function', uniqueString(parameters('siteName')))]",
         "contentShareName": "[toLower(parameters('siteName'))]",
-        "repoUrl": "https://github.com/jefking/fl-default-static.git",
-        "branch": "master",
-        "servicebus": "<ADD IN SERVICE BUS CONNECTION/CREATION>"
+        "repoUrl": "https://github.com/jefking/fn-webhook-queue",
+        "branch": "master"
     },
     "resources": [
         {
             "apiVersion": "2016-03-01",
             "name": "[parameters('siteName')]",
             "type": "Microsoft.Web/sites",
-            "location": "[resourceGroup().location]",
             "properties": {
                 "name": "[parameters('siteName')]",
                 "siteConfig": {
@@ -50,7 +68,11 @@
                         },
                         {
                             "name": "ServiceBus",
-                            "value": "[variables('servicebus')]"
+                            "value": "[listkeys(variables('authRuleResourceId'), variables('sbVersion')).primaryConnectionString]"
+                        },
+                        {
+                            "name": "queueName",
+                            "value": "[parameters('queueName')]"
                         }
                     ]
                 },
@@ -72,26 +94,37 @@
                 }
             ],
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]"
             ],
+            "location": "[parameters('siteLocation')]",
             "kind": "functionapp"
         },
         {
             "apiVersion": "2015-05-01-preview",
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageName')]",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('siteLocation')]",
             "properties": {
                 "accountType": "Standard_LRS"
             }
+        },
+        {
+            "apiVersion": "[variables('sbVersion')]",
+            "name": "[variables('serviceBusNamespaceName')]",
+            "type": "Microsoft.ServiceBus/namespaces",
+            "location": "[resourceGroup().location]",
+            "properties": {},
+            "resources": [
+                {
+                    "apiVersion": "[variables('sbVersion')]",
+                    "name": "[parameters('queueName')]",
+                    "type": "Queues",
+                    "dependsOn": [
+                        "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+                    ]
+                }
+            ]
         }
-    ],
-    "outputs": {
-        "siteUri": {
-            "type": "string",
-            "value": "[concat('https://',reference(resourceId('Microsoft.Web/sites', parameters('siteName'))).hostNames[0])]"
-        }
-    },
-    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0"
+    ]
 }
