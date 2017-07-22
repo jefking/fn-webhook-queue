@@ -121,7 +121,7 @@
                     "name": "[parameters('queueName')]",
                     "type": "Queues",
                     "dependsOn": [
-                        "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+                        "[concat('Microsoft.ServiceBus/namespaces/', variables('serviceBusNamespaceName'))]"
                     ]
                 }
             ]
